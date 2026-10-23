@@ -18,9 +18,6 @@ public class Product extends BaseEntity {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "description", length = 1000)
-    private String description;
-
     @Column(name = "price")
     private Integer price;
 

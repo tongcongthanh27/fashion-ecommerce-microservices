@@ -1,7 +1,8 @@
 package org.example.micro.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.example.micro.dto.request.ProductRequest;
+import org.example.micro.dto.request.ProductCreateRequest;
+import org.example.micro.dto.request.ProductUpdateRequest;
 import org.example.micro.dto.response.ProductResponse;
 import org.example.micro.entity.Category;
 import org.example.micro.entity.Product;
@@ -13,8 +14,8 @@ import org.example.micro.repository.ProductRepository;
 import org.example.micro.service.ProductService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(ProductRequest request) {
+    public ProductResponse createProduct(ProductCreateRequest request) {
         Product product = productMapper.toEntity(request);
         product.setCategory(findCategory(request.getCategoryId()));
         return productMapper.toResponse(productRepository.save(product));
@@ -40,18 +41,19 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAllProducts() {
-        return productRepository.findAllByIsDeletedFalse().stream()
-                .map(productMapper::toResponse)
-                .toList();
+    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+        return productRepository.findAllByIsDeletedFalse(pageable)
+                .map(productMapper::toResponse);
     }
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(String id, ProductRequest request) {
+    public ProductResponse updateProduct(String id, ProductUpdateRequest request) {
         Product product = findProduct(id);
         productMapper.updateEntity(request, product);
-        product.setCategory(findCategory(request.getCategoryId()));
+        if (request.getCategoryId() != null) {
+            product.setCategory(findCategory(request.getCategoryId()));
+        }
         return productMapper.toResponse(product);
     }
 

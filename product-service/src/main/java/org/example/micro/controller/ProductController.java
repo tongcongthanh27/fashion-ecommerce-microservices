@@ -3,14 +3,16 @@ package org.example.micro.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.micro.dto.ApiResponse;
-import org.example.micro.dto.request.ProductRequest;
+import org.example.micro.dto.request.ProductCreateRequest;
+import org.example.micro.dto.request.ProductUpdateRequest;
 import org.example.micro.dto.response.ProductResponse;
 import org.example.micro.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,7 +23,7 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
-            @Valid @RequestBody ProductRequest request) {
+            @Valid @RequestBody ProductCreateRequest request) {
         ApiResponse<ProductResponse> response = ApiResponse.<ProductResponse>builder()
                 .code(HttpStatus.CREATED.value())
                 .message("Tạo sản phẩm thành công")
@@ -31,11 +33,14 @@ public class ProductController {
     }
 
     @GetMapping
-    public ApiResponse<List<ProductResponse>> getAllProducts() {
-        return ApiResponse.<List<ProductResponse>>builder()
+    public ApiResponse<Page<ProductResponse>> getAllProducts(
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(defaultValue = "0") int pageNumber) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        return ApiResponse.<Page<ProductResponse>>builder()
                 .code(HttpStatus.OK.value())
                 .message("Lấy danh sách sản phẩm thành công")
-                .result(productService.getAllProducts())
+                .result(productService.getAllProducts(pageable))
                 .build();
     }
 
@@ -51,7 +56,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ApiResponse<ProductResponse> updateProduct(
             @PathVariable String id,
-            @Valid @RequestBody ProductRequest request) {
+            @Valid @RequestBody ProductUpdateRequest request) {
         return ApiResponse.<ProductResponse>builder()
                 .code(HttpStatus.OK.value())
                 .message("Cập nhật sản phẩm thành công")

@@ -1,14 +1,15 @@
 package org.example.micro.service;
 
-import org.example.micro.dto.request.ProductRequest;
+import org.example.micro.dto.request.ProductCreateRequest;
+import org.example.micro.dto.request.ProductUpdateRequest;
 import org.example.micro.dto.response.ProductResponse;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ProductService {
-    ProductResponse createProduct(ProductRequest request);
+    ProductResponse createProduct(ProductCreateRequest request);
     ProductResponse getProductById(String id);
-    List<ProductResponse> getAllProducts();
-    ProductResponse updateProduct(String id, ProductRequest request);
+    Page<ProductResponse> getAllProducts(Pageable pageable);
+    ProductResponse updateProduct(String id, ProductUpdateRequest request);
     void deleteProduct(String id);
 }
