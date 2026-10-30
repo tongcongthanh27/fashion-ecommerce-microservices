@@ -3,16 +3,19 @@ package org.example.micro.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.micro.dto.ApiResponse;
+import org.example.micro.dto.client.request.StockDeductRequest;
 import org.example.micro.dto.request.ProductCreateRequest;
+import org.example.micro.dto.client.request.ProductFilter;
 import org.example.micro.dto.request.ProductUpdateRequest;
 import org.example.micro.dto.response.ProductResponse;
 import org.example.micro.service.ProductService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,14 +25,13 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
+    public ApiResponse<ProductResponse> createProduct(
             @Valid @RequestBody ProductCreateRequest request) {
-        ApiResponse<ProductResponse> response = ApiResponse.<ProductResponse>builder()
+        return  ApiResponse.<ProductResponse>builder()
                 .code(HttpStatus.CREATED.value())
                 .message("Tạo sản phẩm thành công")
                 .result(productService.createProduct(request))
                 .build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -70,6 +72,21 @@ public class ProductController {
         return ApiResponse.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .message("Xóa sản phẩm thành công")
+                .build();
+    }
+
+    @PostMapping("/search")
+    public ApiResponse<List<ProductResponse>> search(@RequestBody ProductFilter productFilter){
+        return ApiResponse.<List<ProductResponse>>builder()
+                .result(productService.search(productFilter))
+                .build();
+    }
+
+    @PutMapping("updateStock")
+    public ApiResponse<Void> updateStock(@RequestBody StockDeductRequest request){
+        productService.updateStock(request);
+        return ApiResponse.<Void>builder()
+                .message("Update stock thanh cong")
                 .build();
     }
 }

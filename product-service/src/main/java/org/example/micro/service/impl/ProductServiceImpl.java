@@ -1,7 +1,10 @@
 package org.example.micro.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.example.micro.dto.client.request.StockDeductRequest;
+import org.example.micro.dto.client.request.StockItemRequest;
 import org.example.micro.dto.request.ProductCreateRequest;
+import org.example.micro.dto.client.request.ProductFilter;
 import org.example.micro.dto.request.ProductUpdateRequest;
 import org.example.micro.dto.response.ProductResponse;
 import org.example.micro.entity.Category;
@@ -16,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -62,6 +69,29 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(String id) {
         Product product = findProduct(id);
         product.setIsDeleted(true);
+    }
+
+    @Override
+    public List<ProductResponse> search(ProductFilter productFilter) {
+        return productMapper.toResponseList(productRepository.findByIdIn(productFilter.getIds()));
+    }
+
+    @Override
+    @Transactional
+    public void updateStock(StockDeductRequest request) {
+        List<String> productIds = request.getStockItemRequests().stream()
+                .map(StockItemRequest::getProductId)
+                .distinct()
+                .toList();
+        Map<String, Integer> productStockMap = new HashMap<>();
+        for (StockItemRequest item : request.getStockItemRequests()) {
+            productStockMap.put(item.getProductId(), item.getQuantity());
+        }
+        List<Product> products = productRepository.findByIdIn(productIds);
+        for (Product product: products){
+            Integer quantity = productStockMap.get(product.getId());
+            product.setStock(product.getStock() - quantity);
+        }
     }
 
     private Product findProduct(String id) {
