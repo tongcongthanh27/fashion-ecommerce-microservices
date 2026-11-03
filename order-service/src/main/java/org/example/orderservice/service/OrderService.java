@@ -5,4 +5,5 @@ import org.example.orderservice.dto.response.OrderResponse;
 
 public interface OrderService {
     OrderResponse createOrder(OrderCreateRequest request);
+    void updateStatus(String orderId);
 }

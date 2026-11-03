@@ -1,5 +1,6 @@
 package org.example.orderservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,10 +18,6 @@ public class OrderItem extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
-
     @Column(name = "product_id", length = 36)
     private String productId;
 
@@ -29,5 +26,10 @@ public class OrderItem extends BaseEntity{
 
     @Column
     private Integer quantity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnore
+    private Order order;
 
 }

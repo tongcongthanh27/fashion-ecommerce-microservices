@@ -10,5 +10,6 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class StockDeductRequest {
-    List<StockItemRequest> stockItemRequests;
+    private String orderId;
+    private List<StockItemRequest> stockItemRequests;
 }

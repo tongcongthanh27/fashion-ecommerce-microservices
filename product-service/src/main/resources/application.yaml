@@ -5,8 +5,23 @@ spring:
     username: root
     password: 2716
     url: jdbc:mysql://localhost:3306/product_service
+  kafka:
+    consumer:
+      group-id: product-service
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+
 server:
   port: 6000
+
 logging:
   level:
     org:

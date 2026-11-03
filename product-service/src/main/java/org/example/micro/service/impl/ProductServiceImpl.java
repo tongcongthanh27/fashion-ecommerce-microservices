@@ -1,6 +1,8 @@
 package org.example.micro.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.example.micro.dto.client.request.StockDeductRequest;
 import org.example.micro.dto.client.request.StockItemRequest;
 import org.example.micro.dto.request.ProductCreateRequest;
@@ -9,12 +11,14 @@ import org.example.micro.dto.request.ProductUpdateRequest;
 import org.example.micro.dto.response.ProductResponse;
 import org.example.micro.entity.Category;
 import org.example.micro.entity.Product;
+import org.example.micro.events.ProductLockedEvent;
 import org.example.micro.exception.AppException;
 import org.example.micro.exception.ErrorCode;
 import org.example.micro.mapper.ProductMapper;
 import org.example.micro.repository.CategoryRepository;
 import org.example.micro.repository.ProductRepository;
 import org.example.micro.service.ProductService;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
@@ -23,15 +27,17 @@ import org.springframework.data.domain.Pageable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
-
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     @Override
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
@@ -87,11 +93,15 @@ public class ProductServiceImpl implements ProductService {
         for (StockItemRequest item : request.getStockItemRequests()) {
             productStockMap.put(item.getProductId(), item.getQuantity());
         }
-        List<Product> products = productRepository.findByIdIn(productIds);
+        List<Product> products = productRepository.findByIdForUpdate(productIds);
         for (Product product: products){
             Integer quantity = productStockMap.get(product.getId());
             product.setStock(product.getStock() - quantity);
         }
+        ProductLockedEvent productLockedEvent = new ProductLockedEvent();
+        productLockedEvent.setOrderId(request.getOrderId());
+        kafkaTemplate.send("lock_product", productLockedEvent);
+        log.info("Da gui message len kafka {}", productLockedEvent);
     }
 
     private Product findProduct(String id) {
