@@ -23,7 +23,7 @@ public class ProductClientImpl implements ProductClient {
     public List<ProductDTO> getProductsByIds(ProductFilter productFilter) {
         ApiResponse<List<ProductDTO>> response = webClientBuilder.build()
                 .post()
-                .uri("http://localhost:6000/api/products/search")
+                .uri("http://product-service/api/products/search")
                 .bodyValue(productFilter)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<ProductDTO>>>() {
