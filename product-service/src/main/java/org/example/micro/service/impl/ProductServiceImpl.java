@@ -18,16 +18,18 @@ import org.example.micro.mapper.ProductMapper;
 import org.example.micro.repository.CategoryRepository;
 import org.example.micro.repository.ProductRepository;
 import org.example.micro.service.ProductService;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.sql.Timestamp;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,8 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final RedissonClient redissonClient;
+
     @Override
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
@@ -85,23 +89,47 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void updateStock(StockDeductRequest request) {
-        List<String> productIds = request.getStockItemRequests().stream()
+        List<StockItemRequest> stockItemRequests = request.getStockItemRequests();
+        List<String> sortedIds = request.getStockItemRequests().stream()
                 .map(StockItemRequest::getProductId)
-                .distinct()
-                .toList();
-        Map<String, Integer> productStockMap = new HashMap<>();
-        for (StockItemRequest item : request.getStockItemRequests()) {
-            productStockMap.put(item.getProductId(), item.getQuantity());
+                .sorted()
+                .collect(Collectors.toList());
+
+        String lockKey = "lock:products:" + String.join(",", sortedIds);
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try{
+            if (lock.tryLock(10,5, TimeUnit.SECONDS)){
+                Thread.sleep(4000);
+                log.info("Acquired Redis lock for: {}", lockKey);
+                Map<String, Integer> productStockMap = new HashMap<>();
+                for (StockItemRequest item : request.getStockItemRequests()) {
+                    productStockMap.put(item.getProductId(), item.getQuantity());
+                }
+                List<Product> products = productRepository.findByIdIn(sortedIds);
+                for (Product product: products){
+                    Integer quantity = productStockMap.get(product.getId());
+                    product.setStock(product.getStock() - quantity);
+                }
+                ProductLockedEvent productLockedEvent = new ProductLockedEvent();
+                productLockedEvent.setOrderId(request.getOrderId());
+                kafkaTemplate.send("lock_product", productLockedEvent);
+                log.info("Da gui message len kafka {}", productLockedEvent);
+            }
+            else {
+                throw new RuntimeException("Server busy, please try again later");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Proccess interrupted");
         }
-        List<Product> products = productRepository.findByIdForUpdate(productIds);
-        for (Product product: products){
-            Integer quantity = productStockMap.get(product.getId());
-            product.setStock(product.getStock() - quantity);
+        finally {
+            log.info("Waiting for unlock [{}]", lockKey);
+            if (lock.isHeldByCurrentThread()){
+                lock.unlock();
+                log.info("Unlock success for [{}]", lockKey);
+            }
         }
-        ProductLockedEvent productLockedEvent = new ProductLockedEvent();
-        productLockedEvent.setOrderId(request.getOrderId());
-        kafkaTemplate.send("lock_product", productLockedEvent);
-        log.info("Da gui message len kafka {}", productLockedEvent);
     }
 
     private Product findProduct(String id) {
