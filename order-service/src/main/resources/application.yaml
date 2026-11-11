@@ -1,4 +1,7 @@
 eureka:
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
@@ -9,8 +12,11 @@ spring:
 
   datasource:
     username: root
-    password: 2716
+    password: 123456789
     url: jdbc:mysql://localhost:3306/order_service
+  jpa:
+    hibernate:
+      ddl-auto: update
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -28,9 +34,9 @@ spring:
 server:
   port: 6001
 
-logging:
-  level:
-    org:
-      hibernate:
-        SQL: DEBUG
-    root: debug
+#logging:
+#  level:
+#    org:
+#      hibernate:
+#        SQL: DEBUG
+#    root: debug
