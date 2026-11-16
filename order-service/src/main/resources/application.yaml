@@ -13,7 +13,7 @@ spring:
   datasource:
     username: root
     password: 123456789
-    url: jdbc:mysql://localhost:3306/order_service
+    url: jdbc:mysql://localhost:3339/order_service
   jpa:
     hibernate:
       ddl-auto: update

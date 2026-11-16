@@ -20,6 +20,8 @@ import org.example.micro.repository.ProductRepository;
 import org.example.micro.service.ProductService;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +67,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse updateProduct(String id, ProductUpdateRequest request) {
         Product product = findProduct(id);
         productMapper.updateEntity(request, product);
@@ -82,6 +85,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "#productFilter.ids", condition = "#productFilter.ids != null")
     public List<ProductResponse> search(ProductFilter productFilter) {
         return productMapper.toResponseList(productRepository.findByIdIn(productFilter.getIds()));
     }

@@ -1,16 +1,14 @@
 package org.example.micro.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.example.micro.entity.BaseEntity;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.*;
 
-
-@Getter
-@Setter
 @Entity
 @Table(name = "categories")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Category extends BaseEntity {
 
     @Id

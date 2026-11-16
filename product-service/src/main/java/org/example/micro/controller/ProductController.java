@@ -46,7 +46,7 @@ public class ProductController {
                 .build();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("{id}")
     public ApiResponse<ProductResponse> getProductById(@PathVariable String id) {
         return ApiResponse.<ProductResponse>builder()
                 .code(HttpStatus.OK.value())
@@ -75,7 +75,7 @@ public class ProductController {
                 .build();
     }
 
-    @PostMapping("/search")
+    @PostMapping("search")
     public ApiResponse<List<ProductResponse>> search(@RequestBody ProductFilter productFilter){
         return ApiResponse.<List<ProductResponse>>builder()
                 .result(productService.search(productFilter))

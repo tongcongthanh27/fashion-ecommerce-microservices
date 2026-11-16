@@ -6,7 +6,7 @@ services:
   mysql-vti:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3339:3306"
     environment:
       MYSQL_DATABASE: "testing_system"
       MYSQL_ROOT_PASSWORD: "123456789"

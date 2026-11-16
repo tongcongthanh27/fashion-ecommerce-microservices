@@ -1,0 +1,27 @@
+eureka:
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+spring:
+  application:
+    name: auth-service
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: MICROSERVICE
+  resource: backend
+  credentials:
+    secret: 'xUPpPcWNsf1l32QS55QoG6MzSaMMcDHx'
+
+server:
+  port: 6688
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
